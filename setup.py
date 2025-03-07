@@ -19,7 +19,7 @@ and Laura Pozzi, Università della Svizzera italiana (USI), Lugano, Switzerland
 Event name: (Computing Frontiers - Workshop on Open-Source Hardware) CF23-OSHW 23, May 9-11, 2023, Bologna, Italy
 DOI: https://doi.org/10.1145/3587135.3591438
 """
-INSTALL_REQUIREMENTS_FILE = 'install_requiremnets.txt'
+INSTALL_REQUIREMENTS_FILE = 'install_requirements.txt'
 INSTALL_REQUIREMENTS = []
 with open(INSTALL_REQUIREMENTS_FILE, 'r') as IR:
     lines = IR.readlines()

@@ -1,3 +1,11 @@
 # IDE
 .idea
 .vscode
+
+# generated for PIP release
+/build
+/dist
+/z3log.egg-info
+
+# python environments
+.venv*

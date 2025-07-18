@@ -18,30 +18,30 @@ and Laura Pozzi, Università della Svizzera italiana (USI), Lugano, Switzerland
 Event name: (Computing Frontiers - Workshop on Open-Source Hardware) CF23-OSHW 23, May 9-11, 2023, Bologna, Italy
 DOI: https://doi.org/10.1145/3587135.3591438
 """
-INSTALL_REQUIREMENTS_FILE = 'install_requirements.txt'
+INSTALL_REQUIREMENTS_FILE = 'prod.requirements.txt'
 INSTALL_REQUIREMENTS = []
 with open(INSTALL_REQUIREMENTS_FILE, 'r') as IR:
     lines = IR.readlines()
     for line in lines:
-        INSTALL_REQUIREMENTS.append(line.replace('\n', ""))
+        INSTALL_REQUIREMENTS.append(line.replace('\n', ''))
 
 
 # Setting up
 setup(
-    name="z3log",
+    name='z3log',
     version=VERSION,
-    author="Morteza Rezaalipour (MorellRAP)",
-    author_email="<rezaalipour.usi@gmail.com>",
+    author='Morteza Rezaalipour (MorellRAP)',
+    author_email='<rezaalipour.usi@gmail.com>',
     description=DESCRIPTION,
     packages=find_packages(),
     install_requires=INSTALL_REQUIREMENTS,
     keywords=['python', 'verilog', 'circuits', 'synthesis'],
     classifiers=[
-        "Development Status :: 1 - Planning",
-        "Intended Audience :: Developers",
-        "Programming Language :: Python :: 3",
-        "Operating System :: Unix",
-        "Operating System :: MacOS :: MacOS X",
-        "Operating System :: Microsoft :: Windows",
+        'Development Status :: 1 - Planning',
+        'Intended Audience :: Developers',
+        'Programming Language :: Python :: 3',
+        'Operating System :: Unix',
+        'Operating System :: MacOS :: MacOS X',
+        'Operating System :: Microsoft :: Windows',
     ]
 )

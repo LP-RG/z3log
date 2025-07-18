@@ -3,12 +3,11 @@ from setuptools import setup, find_packages
 
 # --== START SETTINGS ==--
 
-VERSION = '2.2.14.sxpat'
+VERSION = '3.0.0'
 DESCRIPTION = """
 Forked from Morteza Rezaalipour https://github.com/MortezaRezaalipour/z3log.
 
 This fork contains specific changes to be used in https://github.com/LP-RG/subxpat.
-The versioning will continue from the latest common version and all future versions ids will end with `.sxpat` to make the diverging path clear.
 """
 REQUIREMENTS_FILE = 'prod.requirements.txt'
 
@@ -19,7 +18,7 @@ with open(REQUIREMENTS_FILE, 'r') as ifile:
     requirements = ifile.read().splitlines()
 
 setup(
-    name='z3log',
+    name='z3log-xpatvariant',
     version=VERSION,
     author='Morteza Rezaalipour (MorellRAP)',
     author_email='rezaalipour.usi@gmail.com',

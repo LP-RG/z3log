@@ -6,6 +6,7 @@
 /build
 /dist
 /z3log.egg-info
+/z3log_xpatvariant.egg-info
 
 # python environments
 .venv*

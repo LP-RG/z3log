@@ -1,0 +1,6 @@
+-r prod.requirements.txt
+
+pylint
+mypy
+setuptools
+wheel

@@ -1,48 +1,40 @@
 from setuptools import setup, find_packages
-import os
 
 
-VERSION = '2.2.13'
+# --== START SETTINGS ==--
+
+VERSION = '2.2.14.sxpat'
 DESCRIPTION = """
-Paper Title: ErrorEval: an Open-Source Worst-Case-Error Evaluation Framework for Approximate Computing
+Forked from Morteza Rezaalipour https://github.com/MortezaRezaalipour/z3log.
 
-Short Description: The open-source toolchain that proposes a methodology called ErrorEval which relies on 
-SMT (Satisfiability Modulo Theories) solvers.
-
-Authors: 
-Morteza Rezaalipour, Università della Svizzera italiana (USI), Lugano, Switzerland
-Lorenzo Ferretti, Micron Technology, San Jose, USA
-Ilaria Scarabottolo, Università della Svizzera italiana (USI), Lugano, Switzerland
-George A. Constantinides, Imperial College London, London, UK
-and Laura Pozzi, Università della Svizzera italiana (USI), Lugano, Switzerland
-
-Event name: (Computing Frontiers - Workshop on Open-Source Hardware) CF23-OSHW 23, May 9-11, 2023, Bologna, Italy
-DOI: https://doi.org/10.1145/3587135.3591438
+This fork contains specific changes to be used in https://github.com/LP-RG/subxpat.
+The versioning will continue from the latest common version and all future versions ids will end with `.sxpat` to make the diverging path clear.
 """
-INSTALL_REQUIREMENTS_FILE = 'install_requirements.txt'
-INSTALL_REQUIREMENTS = []
-with open(INSTALL_REQUIREMENTS_FILE, 'r') as IR:
-    lines = IR.readlines()
-    for line in lines:
-        INSTALL_REQUIREMENTS.append(line.replace('\n', ""))
+REQUIREMENTS_FILE = 'prod.requirements.txt'
+
+# --== END SETTINGS ==--
 
 
-# Setting up
+with open(REQUIREMENTS_FILE, 'r') as ifile:
+    requirements = ifile.read().splitlines()
+
 setup(
-    name="z3log",
+    name='z3log',
     version=VERSION,
-    author="Morteza Rezaalipour (MorellRAP)",
-    author_email="<rezaalipour.usi@gmail.com>",
+    author='Morteza Rezaalipour (MorellRAP)',
+    author_email='rezaalipour.usi@gmail.com',
+    maintainer='Research group of Laura Pozzi',
+    url='https://github.com/LP-RG/z3log',
     description=DESCRIPTION,
     packages=find_packages(),
-    install_requires=INSTALL_REQUIREMENTS,
+    install_requires=requirements,
     keywords=['python', 'verilog', 'circuits', 'synthesis'],
     classifiers=[
-        "Development Status :: 1 - Planning",
-        "Intended Audience :: Developers",
-        "Programming Language :: Python :: 3",
-        "Operating System :: Unix",
-        "Operating System :: MacOS :: MacOS X",
-        "Operating System :: Microsoft :: Windows",
+        'Development Status :: 1 - Planning',
+        'Intended Audience :: Developers',
+        'Programming Language :: Python :: 3',
+        'Operating System :: Unix',
+        'Operating System :: MacOS :: MacOS X',
+        'Operating System :: Microsoft :: Windows',
     ]
-) 
+)

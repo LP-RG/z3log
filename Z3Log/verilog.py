@@ -1,16 +1,15 @@
 import os
 import regex as re
-import random
 import numpy as np
 import subprocess
 import sys
 from .config.path import *
 from .config.config import *
-from .argument import Arguments
-from .utils import *
-from typing import Dict, List
+from .utils import get_pure_name
+from typing import Dict, List, Union
 from colorama import Fore, Style
 from collections import OrderedDict
+
 
 class Verilog:
     def __init__(self, benchmark_name: str, samples: list = []):
@@ -47,13 +46,11 @@ class Verilog:
 
         self.__num_inputs, self.__num_outputs = self.extract_module_io()
 
-
         self.__sample_results = None
         self.__samples = samples
 
         self.synthesize_to_gate_level(self.in_path, self.out_path)
         # self.unwrap_variables()
-
 
     @property
     def name(self):
@@ -62,6 +59,7 @@ class Verilog:
     @name.setter
     def name(self, newname):
         self.__circuit_name == newname
+
     @property
     def num_inputs(self):
         return self.__num_inputs
@@ -114,7 +112,7 @@ class Verilog:
     def vvp_out_path(self):
         return self.__vvp_out_path
 
-    def set_samples(self, samples: np.array or list):
+    def set_samples(self, samples: Union[np.ndarray, list]):
         self.__samples = samples
 
     @property
@@ -147,7 +145,7 @@ class Verilog:
         # cur_list will be = ['[1:0]a', 'b'] which should be ['[1:0]a', '[1:0]b']
         if self.is_vector(cur_list[0]):
             # find the range
-            vector_range = re.search('\[\d+:\d+\]', cur_list[0]).group()
+            vector_range = re.search(r'\[\d+:\d+\]', cur_list[0]).group()
             # propagate the range for the rest of the elements of cur_list
             for i in range(1, len(cur_list)):
                 cur_list[i] = vector_range + cur_list[i]
@@ -159,7 +157,7 @@ class Verilog:
         :param var_name: the variable name
         :return: True if the variable is a vector, otherwise returns False
         """
-        if re.search('(\[\d+:\d+\])', var_name):
+        if re.search(r'(\[\d+:\d+\])', var_name):
             return True
         else:
             return False
@@ -172,7 +170,7 @@ class Verilog:
         """
         if self.is_vector(var_name):
             # remove [n:m] part
-            match_obj = re.search('(\[\d+:\d+\])(.*)', var_name)
+            match_obj = re.search(r'(\[\d+:\d+\])(.*)', var_name)
             return match_obj.group(2)
         else:
             return var_name
@@ -185,7 +183,7 @@ class Verilog:
         """
         if self.is_vector(var_name):
             # compute the length
-            match = re.search('\[(\d+):(\d+)\]', var_name)  # [1:0]a
+            match = re.search(r'\[(\d+):(\d+)\]', var_name)  # [1:0]a
             l_bound = int(match.group(1))  # 1
             r_bound = int(match.group(2))  # 0
             return abs((l_bound - r_bound) + 1)
@@ -244,21 +242,20 @@ class Verilog:
         module_name = None
         port_list = None
 
-
         for line in verilog_str:
             line = line.strip()  # remove whitespaces at the beginning or end of the line
 
             if re.search('module', line) and not re.search('endmodule', line):
                 # extract module
 
-                match_object = re.search('module (\w+)', line)  # module adder(a, b, c)
+                match_object = re.search(r'module (\w+)', line)  # module adder(a, b, c)
                 module_name = match_object.group(1)  # adder
 
                 # extract port list
 
                 line = line.split(module_name)[1].replace("\n", "").strip()
 
-                match_object = re.search('\((.+)\)', line)  # module adder(a, b, c)
+                match_object = re.search(r'\((.+)\)', line)  # module adder(a, b, c)
 
                 ports_str = match_object.group(1)  # a, b, c
 
@@ -266,7 +263,6 @@ class Verilog:
         assert module_name and port_list, f'Either module_name or port_list is None'
 
         return module_name, port_list
-
 
     def synthesize_to_gate_level(self, input_path: str, output_path: str):
         yosys_command = f"""
@@ -289,8 +285,6 @@ class Verilog:
 
         self.rename_variables(output_path, output_path)
 
-
-
     def rename_variables(self, input_path: str, output_path: str):
         with open(f'{input_path}', 'r') as infile:
             verilog_str = infile.read()
@@ -312,10 +306,6 @@ class Verilog:
 
         new_labels = self.create_new_labels(port_list, input_dict, output_dict)
         # print(f'{new_labels = }')
-
-
-
-
 
         verilog_str = self.relabel_nodes(verilog_str, new_labels)
 
@@ -350,8 +340,8 @@ class Verilog:
             for key, value in new_labels.items():
 
                 escaped_key = re.escape(key)
-                if re.search(f'{escaped_key}[,;)\s\n\r]|({escaped_key})$', line):
-                    found = re.search(f'({escaped_key})[,;)\s\r\n]|({escaped_key})$', line)
+                if re.search(f'{escaped_key}[,;)\\s\n\r]|({escaped_key})$', line):
+                    found = re.search(f'({escaped_key})[,;)\\s\r\n]|({escaped_key})$', line)
                     middle = found.group(1)
                     end = found.group(2)
 
@@ -362,7 +352,7 @@ class Verilog:
                     elif found.group(2):
                         line = f"{line[:s]}{value}"
                     else:
-                        print(Fore.RED + f'ERROR! in (__name__): variable{key} does not belong in either of the two groups!'+ Style.RESET_ALL)
+                        print(Fore.RED + f'ERROR! in (__name__): variable{key} does not belong in either of the two groups!' + Style.RESET_ALL)
                     # print(f'{line  =}')
                     verilog_str_tmp[line_idx] = line
                 # if key in line:
@@ -388,7 +378,6 @@ class Verilog:
     #     """
     #     with open('log.txt', 'w') as y:
     #         subprocess.call([YOSYS, '-p', yosys_command])
-
 
     def unwrap_variables(self) -> None:
         """
@@ -471,7 +460,7 @@ class Verilog:
             f.write("end\n")
             f.write("endmodule\n")
 
-    def extract_module_io(self) -> (int, int):
+    def extract_module_io(self) -> 'tuple[int, int]':
         clean_verilog = self.in_path
         yosys_command = 'read_verilog ' + clean_verilog + '; synth -flatten; opt; opt_clean; techmap; write_verilog ' + self.tmp + ';\n'
         process = subprocess.run([YOSYS, '-p', yosys_command], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -518,7 +507,7 @@ class Verilog:
 
         return inp_count, out_count
 
-    def extract_module_info(self) -> 'tuple(str, list(str), dict, int, dict, int)':
+    def extract_module_info(self) -> 'tuple[str, list[str], dict, int, dict, int]':
         """
         reads a verilog file and extracts the signature
         :return: a tuple containing the modulename, the list of input and output names, two dictionary that hold the bitwidth

@@ -4,16 +4,15 @@ import os
 import shutil
 from .config.path import *
 from .config.config import *
-import time
 
 
 def get_pure_name(file_name: str) -> str:
     if file_name is None:
         return file_name
     name = file_name
-    if re.search('/', file_name):
+    if re.search(r'/', file_name):
         name = file_name.split('/')[-1]
-    if re.search('\.', name):
+    if re.search(r'\.', name):
         name = name.split('.')[0]
     return name
 
@@ -49,7 +48,6 @@ def convert_verilog_to_gv(file_name: str) -> None:
     with open(f'yosys_graph.log', 'w') as y:
         subprocess.call([YOSYS, '-p', yosys_command], stdout=y)
     fix_direction(file_name)
-
 
 
 def setup_folder_structure():

@@ -31,4 +31,3 @@ LOG_PATH = {
     'yosys': 'txt',
     'lsoracle': 'txt'
 }
-

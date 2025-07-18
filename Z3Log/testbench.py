@@ -79,7 +79,6 @@ def module_info(fname: str):
     yosys_command = 'read_verilog ' + fname + '; synth -flatten; opt; opt_clean; techmap; write_verilog ' + tmp + ';\n'
     subprocess.call([YOSYS, '-p', yosys_command], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
-
     tmp_file = open(tmp)
     inp = {}
     inp_count = 0

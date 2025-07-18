@@ -1,7 +1,6 @@
 import argparse
 import sys
 from .utils import *
-import typing
 
 
 class Arguments:
@@ -18,17 +17,18 @@ class Arguments:
         self.__experiment: str = tmp_args.experiment
         self.__pruning_percentage: int = tmp_args.pruning_percentage
         self.__clean = tmp_args.clean
-        self.__min_labeling : bool = tmp_args.min_labeling
+        self.__min_labeling: bool = tmp_args.min_labeling
         self.__parallel: bool = tmp_args.parallel
         self.__evaluate: bool = tmp_args.evaluate
-
 
     @property
     def parallel(self):
         return self.__parallel
+
     @property
     def min_labeling(self):
         return self.__min_labeling
+
     @property
     def benchmark_name(self):
         return self.__benchmark_name
@@ -104,30 +104,37 @@ class Arguments:
                                default=100,
                                type=int,
                                help='number-of-monte-carlo-samples')
+
         my_parser.add_argument('--approximate_benchmark', '-app',
                                type=str,
                                default=None,
                                help='approximate-benchmark-name in gv/verilog format')
+
         my_parser.add_argument('--metric', '-metric',
                                type=str,
                                default=WAE,
                                help='the-desired-worst-case-error-metric')
+
         my_parser.add_argument('--precision', '-p',
                                type=int,
                                default=2,
                                help='number-of-decimal-points-for-wre')
+
         my_parser.add_argument('--strategy', '-strategy',
                                type=str,
                                default=MONOTONIC,
                                help='the-solver-strategy-to-find-metric')
+
         my_parser.add_argument('--optimization', '-opt',
                                type=str,
                                default=None,
                                help='the-solver-optimization (Solver, Optimize, Maximize)')
+
         my_parser.add_argument('--experiment', '-e',
                                type=str,
                                default=SINGLE,
                                help="the-experiment-name [SINGLE|QOR|RANDOM]")
+
         my_parser.add_argument('--pruning_percentage', '-pp',
                                type=int,
                                default=10,

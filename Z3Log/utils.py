@@ -4,7 +4,6 @@ import os
 import shutil
 from .config.path import *
 from .config.config import *
-import time
 
 
 def get_pure_name(file_name: str) -> str:
@@ -36,7 +35,6 @@ def convert_verilog_to_gv(file_name: str) -> None:
 
     folder, extension = OUTPUT_PATH['ver']
     verilog_in_path = f'{folder}/{file_name}.{extension}'
-    # print(f'{verilog_in_path = }')
     folder, extension = OUTPUT_PATH['gv']
     gv_out_path = f'{folder}/{file_name}.{extension}'
 
@@ -45,11 +43,10 @@ def convert_verilog_to_gv(file_name: str) -> None:
         opt
         clean
         show -prefix {gv_out_path[:-3]} -format gv
-        """
+    """
     with open(f'yosys_graph.log', 'w') as y:
         subprocess.call([YOSYS, '-p', yosys_command], stdout=y)
     fix_direction(file_name)
-
 
 
 def setup_folder_structure():
@@ -58,7 +55,7 @@ def setup_folder_structure():
                    OUTPUT_PATH['report'][0], OUTPUT_PATH['figure'][0], TEST_PATH['tb'][0], TEST_PATH['z3'][0]]
 
     for directory in directories:
-        if ~os.path.exists(directory):
+        if not os.path.exists(directory):
             os.makedirs(directory, exist_ok=True)
 
 
@@ -72,13 +69,15 @@ def clean_all():
 
 
 def check_graph_equality(G1, G2):
-    if G1.graph.adj == G2.graph.adj and \
-       G1.graph.nodes == G2.graph.nodes and \
-       G1.graph.edges == G2.graph.edges and \
-       G1.input_dict == G2.input_dict and \
-       G1.output_dict == G2.output_dict and \
-       G1.gate_dict == G2.gate_dict and \
-       G1.constant_dict == G2.constant_dict:
+    if (
+        G1.graph.adj == G2.graph.adj
+        and G1.graph.nodes == G2.graph.nodes
+        and G1.graph.edges == G2.graph.edges
+        and G1.input_dict == G2.input_dict
+        and G1.output_dict == G2.output_dict
+        and G1.gate_dict == G2.gate_dict
+        and G1.constant_dict == G2.constant_dict
+    ):
         return True
     else:
         return False

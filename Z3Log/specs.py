@@ -3,8 +3,16 @@ from .config.config import *
 
 
 class Specs():
-    def __init__(self, benchmark=None, approx_benchmark=None, experiment=None, strategy=MONOTONIC, metric=WAE,
-                 num_samples=None, precision=2, optimization=None):
+    def __init__(
+        self,
+            benchmark=None, approx_benchmark=None,
+            experiment=None,
+            strategy=MONOTONIC,
+            metric=WAE,
+            num_samples=None,
+            precision=2,
+            optimization=None,
+    ):
         self.__benchmark: str = benchmark
         self.__approximate_benchmark: str = approx_benchmark
 
@@ -49,13 +57,15 @@ class Specs():
         return self.__num_samples
 
     def __repr__(self):
-        return f'An object of class Specs:\n' \
-               f'{self.benchmark = }\n' \
-               f'{self.approximate_benchmark = }\n' \
-               f'{self.experiment = }\n' \
-               f'{self.strategy = }\n' \
-               f'{self.optimization = }\n' \
-               f'{self.metric = }\n' \
-               f'{self.precision = }\n' \
-               f'{self.num_samples = }' \
-               f''
+        return (
+            f'An object of class Specs:\n'
+            f'{self.benchmark = }\n'
+            f'{self.approximate_benchmark = }\n'
+            f'{self.experiment = }\n'
+            f'{self.strategy = }\n'
+            f'{self.optimization = }\n'
+            f'{self.metric = }\n'
+            f'{self.precision = }\n'
+            f'{self.num_samples = }'
+            f''
+        )

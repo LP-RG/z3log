@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages
-import os
 
 
 VERSION = '2.2.14'
@@ -45,4 +44,4 @@ setup(
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
     ]
-) 
+)

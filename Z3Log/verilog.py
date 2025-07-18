@@ -1,16 +1,15 @@
 import os
 import regex as re
-import random
 import numpy as np
 import subprocess
 import sys
 from .config.path import *
 from .config.config import *
-from .argument import Arguments
 from .utils import *
-from typing import Dict, List
+from typing import Dict, List, Union
 from colorama import Fore, Style
 from collections import OrderedDict
+
 
 class Verilog:
     def __init__(self, benchmark_name: str, samples: list = []):
@@ -47,13 +46,10 @@ class Verilog:
 
         self.__num_inputs, self.__num_outputs = self.extract_module_io()
 
-
         self.__sample_results = None
         self.__samples = samples
 
         self.synthesize_to_gate_level(self.in_path, self.out_path)
-        # self.unwrap_variables()
-
 
     @property
     def name(self):
@@ -62,6 +58,7 @@ class Verilog:
     @name.setter
     def name(self, newname):
         self.__circuit_name == newname
+
     @property
     def num_inputs(self):
         return self.__num_inputs
@@ -114,7 +111,7 @@ class Verilog:
     def vvp_out_path(self):
         return self.__vvp_out_path
 
-    def set_samples(self, samples: np.array or list):
+    def set_samples(self, samples: Union[np.ndarray, list]):
         self.__samples = samples
 
     @property
@@ -210,26 +207,26 @@ class Verilog:
             if line.startswith('input'):
                 match_obj = re.search('input (.+)', line)  # input a, b, c; or input [1:0] a;
                 cur_input_str = match_obj.group(1)  # a, b, c or [1:0] a
-                cur_input_list = cur_input_str.strip().replace(" ", "").split(',')  # ['a', 'b', 'c'] or ['[1:0]a']
+                cur_input_list = cur_input_str.strip().replace(' ', '').split(',')  # ['a', 'b', 'c'] or ['[1:0]a']
                 cur_input_list = self.check_multi_vector_declaration(cur_input_list)
                 for inp in cur_input_list:
                     if self.get_name(inp) in port_list:
                         position_in_module_signature = port_list.index(self.get_name(inp))
                         input_dict[position_in_module_signature] = (self.get_name(inp), self.get_width(inp))
                     else:
-                        raise Exception(f"input name {self.get_name(inp)} is not in the port_list")
+                        raise Exception(f'input name {self.get_name(inp)} is not in the port_list')
             # extract outputs
             if line.startswith('output'):
                 match_obj = re.search('output (.+)', line)  # input a, b, c; or input [1:0] a;
                 cur_output_str = match_obj.group(1)  # a, b, c or [1:0] a
-                cur_output_list = cur_output_str.strip().replace(" ", "").split(',')  # ['a', 'b', 'c'] or ['[1:0]a']
+                cur_output_list = cur_output_str.strip().replace(' ', '').split(',')  # ['a', 'b', 'c'] or ['[1:0]a']
                 cur_output_list = self.check_multi_vector_declaration(cur_output_list)
                 for out in cur_output_list:
                     if self.get_name(out) in port_list:
                         position_in_module_signature = port_list.index(self.get_name(out))
                         output_dict[position_in_module_signature] = (self.get_name(out), self.get_width(out))
                     else:
-                        raise Exception(f"output name {self.get_name(out)} is not in the port_list")
+                        raise Exception(f'output name {self.get_name(out)} is not in the port_list')
 
             sorted_input_dict = OrderedDict(sorted(input_dict.items()))
             sorted_output_dict = OrderedDict(sorted(output_dict.items()))
@@ -244,7 +241,6 @@ class Verilog:
         module_name = None
         port_list = None
 
-
         for line in verilog_str:
             line = line.strip()  # remove whitespaces at the beginning or end of the line
 
@@ -256,31 +252,31 @@ class Verilog:
 
                 # extract port list
 
-                line = line.split(module_name)[1].replace("\n", "").strip()
+                line = line.split(module_name)[1].replace('\n', '').strip()
 
                 match_object = re.search('\((.+)\)', line)  # module adder(a, b, c)
 
                 ports_str = match_object.group(1)  # a, b, c
 
-                port_list = ports_str.strip().replace(" ", "").split(',')
+                port_list = ports_str.strip().replace(' ', '').split(',')
+
         assert module_name and port_list, f'Either module_name or port_list is None'
 
         return module_name, port_list
 
-
     def synthesize_to_gate_level(self, input_path: str, output_path: str):
         yosys_command = f"""
-        read_verilog {input_path};
-        synth -flatten;
-        opt;
-        opt_clean -purge;
-        abc -g NAND;
-        opt;
-        opt_clean -purge;
-        splitnets -ports;
-        opt;
-        opt_clean -purge;
-        write_verilog -noattr {output_path};
+            read_verilog {input_path};
+            synth -flatten;
+            opt;
+            opt_clean -purge;
+            abc -g NAND;
+            opt;
+            opt_clean -purge;
+            splitnets -ports;
+            opt;
+            opt_clean -purge;
+            write_verilog -noattr {output_path};
         """
         process = subprocess.run(['yosys', '-p', yosys_command], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         if process.stderr.decode():
@@ -289,33 +285,18 @@ class Verilog:
 
         self.rename_variables(output_path, output_path)
 
-
-
     def rename_variables(self, input_path: str, output_path: str):
         with open(f'{input_path}', 'r') as infile:
             verilog_str = infile.read()
 
-        # print(f'{verilog_str = }')
-
         verilog_str_tmp = verilog_str.split(';')
         verilog_str = verilog_str.split('\n')
 
-        # print(f'{verilog_str = }')
-
         module_name, port_list = self.extract_module_signature(verilog_str_tmp)
-        # print(f'{module_name = }')
-        # print(f'{port_list = }')
 
         input_dict, output_dict = self.extract_inputs_outputs(verilog_str_tmp, port_list)
-        # print(f'{input_dict = }')
-        # print(f'{output_dict = }')
 
         new_labels = self.create_new_labels(port_list, input_dict, output_dict)
-        # print(f'{new_labels = }')
-
-
-
-
 
         verilog_str = self.relabel_nodes(verilog_str, new_labels)
 
@@ -328,17 +309,14 @@ class Verilog:
         for port_idx in input_dict:
             if input_dict[port_idx][0] == port_list[port_idx]:
                 new_labels[port_list[port_idx]] = f'in{port_idx}'
-                # print(f'{new_labels = }')
             else:
                 raise Exception(f'Error!!! {input_dict[port_idx][0]} is not equal to {port_list[port_idx]}')
 
         out_idx = 0
         for port_idx in output_dict:
             if output_dict[port_idx][0] == port_list[port_idx]:
-                # print(Fore.RED + f'{port_idx = }' + Style.RESET_ALL)
                 new_labels[port_list[port_idx]] = f'out{out_idx}'
                 out_idx += 1
-                # print(f'{new_labels = }')
             else:
                 raise Exception(f'Error!!! {output_dict[port_idx][0]} is not equal to {port_list[port_idx]}')
         return new_labels
@@ -352,8 +330,6 @@ class Verilog:
                 escaped_key = re.escape(key)
                 if re.search(f'{escaped_key}[,;)\s\n\r]|({escaped_key})$', line):
                     found = re.search(f'({escaped_key})[,;)\s\r\n]|({escaped_key})$', line)
-                    middle = found.group(1)
-                    end = found.group(2)
 
                     s = found.span()[0]
                     if found.group(1):
@@ -362,45 +338,23 @@ class Verilog:
                     elif found.group(2):
                         line = f"{line[:s]}{value}"
                     else:
-                        print(Fore.RED + f'ERROR! in (__name__): variable{key} does not belong in either of the two groups!'+ Style.RESET_ALL)
-                    # print(f'{line  =}')
+                        print(Fore.RED + f'ERROR! in (__name__): variable{key} does not belong in either of the two groups!' + Style.RESET_ALL)
+
                     verilog_str_tmp[line_idx] = line
-                # if key in line:
-                #     print(f'{key = }')
-                #     print(f'{line = }')
-                #     exit()
         return verilog_str_tmp
-
-    # Deprecated!
-    # def synthesize_to_gate_level(self):
-    #     yosys_command = f"""
-    #     read_verilog {self.in_path}
-    #     synth -flatten
-    #     opt
-    #     opt_clean -purge
-    #     abc -g AND,OR
-    #     write_verilog -noattr {self.out_path}
-    #     abc -g NAND;
-    #     aigmap;
-    #     opt;
-    #     opt_clean -purge;
-    #     write_aiger {self.aig_out_path};
-    #     """
-    #     with open('log.txt', 'w') as y:
-    #         subprocess.call([YOSYS, '-p', yosys_command])
-
 
     def unwrap_variables(self) -> None:
         """
-
         :return:
         """
+
         lsoracle_command = f"""
-        read_aig {self.aig_out_path};
-        write_verilog {self.out_path}
+            read_aig {self.aig_out_path};
+            write_verilog {self.out_path}
         """
         with open('lsoracle_log.txt', 'w') as f:
             subprocess.call([LSORACLE, '-c', lsoracle_command])
+
         self.fix_module_name()
 
     def fix_module_name(self):
@@ -419,11 +373,10 @@ class Verilog:
 
         # read a clean verilog
         # create a test bench for it
-        num = len(self.samples)
         with open(self.testbench, 'w') as f:
             modulename, port_list, inp, n_inputs, out, n_outputs = self.extract_module_info()
 
-            f.write("module " + modulename + "_tb;\n")
+            f.write('module ' + modulename + '_tb;\n')
             f.write('reg [' + str(n_inputs - 1) + ':0] pi;\n')
             f.write('wire [' + str(n_outputs - 1) + ':0] po;\n')
             f.write(modulename + ' dut(')
@@ -457,8 +410,8 @@ class Verilog:
 
             f.write(');\n')
 
-            f.write("initial\n")
-            f.write("begin\n")
+            f.write('initial\n')
+            f.write('begin\n')
 
             for idx, sample in enumerate(self.samples):
 
@@ -466,12 +419,12 @@ class Verilog:
                 f.write('{0:0>{1}}'.format(str(bin(sample))[2:], n_inputs))
 
                 f.write(';\n')
-                f.write("#1 $display(\"%b\", po);\n")
+                f.write('#1 $display("%b", po);\n')
 
-            f.write("end\n")
-            f.write("endmodule\n")
+            f.write('end\n')
+            f.write('endmodule\n')
 
-    def extract_module_io(self) -> (int, int):
+    def extract_module_io(self) -> 'tuple[int, int]':
         clean_verilog = self.in_path
         yosys_command = 'read_verilog ' + clean_verilog + '; synth -flatten; opt; opt_clean; techmap; write_verilog ' + self.tmp + ';\n'
         process = subprocess.run([YOSYS, '-p', yosys_command], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -518,7 +471,7 @@ class Verilog:
 
         return inp_count, out_count
 
-    def extract_module_info(self) -> 'tuple(str, list(str), dict, int, dict, int)':
+    def extract_module_info(self) -> 'tuple[str, list[str], dict, int, dict, int]':
         """
         reads a verilog file and extracts the signature
         :return: a tuple containing the modulename, the list of input and output names, two dictionary that hold the bitwidth
@@ -569,9 +522,11 @@ class Verilog:
         return modulename, port_list, inp, inp_count, out, out_count
 
     def run_test_bench(self):
-        iverilog_command = f'{IVERILOG} -o {self.iverilog_out_path} ' \
-                           f'{self.cleaned_verilog} ' \
-                           f'{self.testbench} '
+        iverilog_command = (
+            f'{IVERILOG} -o {self.iverilog_out_path} '
+            f'{self.cleaned_verilog} '
+            f'{self.testbench} '
+        )
 
         vvp_command = f'{self.iverilog_out_path}'
 
@@ -587,10 +542,11 @@ class Verilog:
 
     def export_circuit(self):
         self.synthesize_to_gate_level(self.in_path, self.out_path)
-        # self.unwrap_variables()
 
     def __repr__(self):
-        return f'An object of class Verilog\n' \
-               f'{self.name = }\n' \
-               f'{self.in_path = }\n' \
-               f'{self.out_path = }\n'
+        return (
+            f'An object of class Verilog\n'
+            f'{self.name = }\n'
+            f'{self.in_path = }\n'
+            f'{self.out_path = }\n'
+        )

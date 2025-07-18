@@ -13,7 +13,7 @@ def create_testbench(input_file, output_file, num, yosys):
     f = open(output_file, 'w')
     modulename, port_list, inp, n_inputs, out, n_outputs = module_info(input_file, yosys)
 
-    f.write("module " + modulename + "_tb;\n")
+    f.write('module ' + modulename + '_tb;\n')
     f.write('reg [' + str(n_inputs - 1) + ':0] pi;\n')
     f.write('wire [' + str(n_outputs - 1) + ':0] po;\n')
     f.write(modulename + ' dut(')
@@ -47,8 +47,8 @@ def create_testbench(input_file, output_file, num, yosys):
 
     f.write(');\n')
 
-    f.write("initial\n")
-    f.write("begin\n")
+    f.write('initial\n')
+    f.write('begin\n')
     if n_inputs >= 17:
         j = 1
         while j <= int(num):
@@ -59,17 +59,17 @@ def create_testbench(input_file, output_file, num, yosys):
                 i += 1
                 f.write(str(n))
             f.write(';\n')
-            f.write("#1 $display(\"%b\", po);\n")
+            f.write('#1 $display("%b", po);\n')
             j += 1
     else:
         for j in range(2 ** n_inputs):
             f.write('# 1  pi=' + str(n_inputs) + '\'b')
             f.write('{0:0>{1}}'.format(str(bin(j))[2:], n_inputs))
             f.write(';\n')
-            f.write("#1 $display(\"%b\", po);\n")
+            f.write('#1 $display("%b", po);\n')
 
-    f.write("end\n")
-    f.write("endmodule\n")
+    f.write('end\n')
+    f.write('endmodule\n')
 
     f.close()
 
@@ -78,7 +78,6 @@ def module_info(fname: str):
     tmp = time.strftime('%Y_%m_%d-%H_%m_%s') + '.v'
     yosys_command = 'read_verilog ' + fname + '; synth -flatten; opt; opt_clean; techmap; write_verilog ' + tmp + ';\n'
     subprocess.call([YOSYS, '-p', yosys_command], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-
 
     tmp_file = open(tmp)
     inp = {}

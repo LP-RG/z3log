@@ -7,7 +7,7 @@ VVP = 'vvp'
 DOT = 'dot'
 
 # regex constants
-POSSIBLE_GATES=f'and|AND|or|OR|not|NOT'
+POSSIBLE_GATES = f'and|AND|or|OR|not|NOT'
 CONST_1 = f"1'1"
 CONST_0 = f"1'0"
 
@@ -18,12 +18,12 @@ CONSTANT_SHAPE = 'square'
 
 # for z3
 Z3_GATES_DICTIONARY = {
-    'and':'And',
-    'AND':'And',
-    'or':'Or',
-    'OR':'Or',
-    'not':'Not',
-    'NOT':'Not',
+    'and': 'And',
+    'AND': 'And',
+    'or': 'Or',
+    'OR': 'Or',
+    'not': 'Not',
+    'NOT': 'Not',
     'T': 'True',
     'True': 'True',
     'true': 'True',
@@ -33,7 +33,7 @@ Z3_GATES_DICTIONARY = {
     'false': 'False',
     'FALSE': 'False'
 }
-REDUNDANT_FIELDS=[
+REDUNDANT_FIELDS = [
     'height', 'width', 'pos',
     'color', 'fontcolor',
     'rects',
@@ -76,8 +76,6 @@ OPTIMIZE = 'optimize'
 MAXIMIZE = 'maximize'
 
 
-
-
 # Experiments
 QOR = 'qor'
 RANDOM = 'random'
@@ -107,6 +105,3 @@ AVERAGE = 'average_plot'
 SMALL_SIZE = 10
 MEDIUM_SIZE = 12
 BIGGER_SIZE = 15
-
-
-

@@ -1,14 +1,12 @@
 import subprocess
-from subprocess import PIPE
 from colorama import Fore, Style
 import networkx as nx
 import re
-from typing import Dict, List
+from typing import Dict, IO
 from .config.path import *
 from .config.config import *
 import os
-from .argument import Arguments
-import time
+
 
 class Graph:
     def __init__(self, benchmark_name, is_clean: bool = False, address: str = None):
@@ -18,53 +16,40 @@ class Graph:
         :param is_clean: leave empty for now
         """
         self.__graph_name = benchmark_name
-        folder, extension = INPUT_PATH['gv'] # input/gv/
+        folder, extension = INPUT_PATH['gv']  # input/gv/
         self.__graph_in_path = f'{folder}/{benchmark_name}.{extension}'
 
-        folder, extension = OUTPUT_PATH['gv'] # output/gv
+        folder, extension = OUTPUT_PATH['gv']  # output/gv
         self.__graph_out_path = f'{folder}/{benchmark_name}.{extension}'
 
-        folder, extension = OUTPUT_PATH['dot'] # output/gv
+        folder, extension = OUTPUT_PATH['dot']  # output/gv
         self.__dot_in_path = f'{folder}/{benchmark_name}.{extension}'
 
-        folder, extension = OUTPUT_PATH['ver'] # output/ver
+        folder, extension = OUTPUT_PATH['ver']  # output/ver
         self.__verilog_in_path = f'{folder}/{benchmark_name}.{extension}'
 
-        # print(f'Converting the graph into a NeworkX object')
-
-
         self.__graph = self.import_graph(address)
-
 
         self.__sorted_node_list = None
 
         self.__is_clean = is_clean
 
-        # s = time.time()
         if not self.is_clean:
             self.clean_graph()
 
             self.sort_graph()
 
-
-
         self.remove_output_outgoing_edges()
-
 
         self.__input_dict = self.sort_dict(self.extract_inputs())
         self.__output_dict = self.sort_dict(self.extract_outputs())
         self.__gate_dict = self.sort_dict(self.extract_gates())
         self.__constant_dict = self.sort_dict(self.extract_constants())
 
-
-
-
         self.__num_inputs = len(self.__input_dict)
         self.__num_outputs = len(self.__output_dict)
         self.__num_gates = len(self.__gate_dict)
         self.__num_constants = len(self.__constant_dict)
-
-
 
     @property
     def name(self):
@@ -149,7 +134,6 @@ class Graph:
     def set_num_gates(self, gate_count):
         self.__num_gates = gate_count
 
-
     @property
     def num_constants(self):
         return self.__num_constants
@@ -178,15 +162,11 @@ class Graph:
                         self.graph.remove_edge(n, s)
                         self.graph.add_edge(pred, s)
 
-
     def sort_dict(self, this_dict: Dict) -> Dict:
-        sorted_dict: type(this_dict) = {}
+        sorted_dict = {}
         this_dict_ids = list(this_dict.keys())
-        # print(f'{this_dict_ids = }')
 
         this_dict_ids.sort()
-        # print(f'{this_dict_ids = }')
-
 
         for i in this_dict_ids:
             sorted_dict[i] = this_dict[i]
@@ -194,25 +174,21 @@ class Graph:
         return sorted_dict
 
     def extract_inputs(self):
-        # print(f'Extracting inputs...')
         input_dict = {}
         idx = 0
         for n in self.graph.nodes():
             if self.is_pi(n):
                 idx = re.search('\d+', n).group()
                 input_dict[int(idx)] = n
-                # idx += 1
         return input_dict
 
     def extract_outputs(self):
-        # print(f'Extracting outputs...')
         output_dict = {}
         idx = 0
         for n in self.graph.nodes():
             if self.is_po(n):
                 idx = re.search('\d+', n).group()
                 output_dict[int(idx)] = n
-                # idx += 1
         return output_dict
 
     def extract_gates(self):
@@ -222,7 +198,6 @@ class Graph:
             if self.is_cleaned_gate(n):
                 idx = re.search('\d+', n).group()
                 gate_dict[int(idx)] = n
-                # idx += 1
         return gate_dict
 
     def extract_constants(self):
@@ -232,7 +207,6 @@ class Graph:
             if self.is_constant(n):
                 idx = re.search('\d+', n).group()
                 constant_dict[int(idx)] = n
-                # idx += 1
         return constant_dict
 
     # methods
@@ -268,7 +242,6 @@ class Graph:
                 tmp_graph.nodes[k][attr] = v[attr]
 
         self.set_graph(tmp_graph)
-        # print(f'{tmp_graph.nodes = }')
 
     # TODO
     # Deprecated
@@ -291,80 +264,46 @@ class Graph:
         self.set_num_outputs(count_o)
         self.set_num_gates(count_g)
 
-    # def convert_verilog_to_gv(self):
-    #     print(f'{self.dot_in_path = }')
-    #     yosys_command = f"""
-    #         read_verilog {self.verilog_in_path}
-    #         show -prefix {self.out_path[:-3]} -format gv
-    #         """
-    #     with open(f'yosys_graph.log', 'w') as y:
-    #         subprocess.call([YOSYS, '-p', yosys_command], stdout=y)
-    #     print(f'{self.dot_in_path = }')
-    #     self.fix_direction()
-
     def fix_direction(self):
-        # print(f'{self.dot_in_path = }')
         dot_command = f'{DOT} {self.dot_in_path} -Grankdir=TB -o {self.out_path}'
         subprocess.call([dot_command], shell=True)
-        # print(f'{self.dot_in_path = }')
         os.remove(self.dot_in_path)
 
     def clean_graph(self):
-        # s = time.time()
         self.merge_points_into_source()
-        # e = time.time()
-        # print(Fore.GREEN + f'merge_points_into_source runtime = {e - s}', Style.RESET_ALL)
-
 
         self.clean_input_labels()
-
 
         self.clean_output_labels()
 
         self.clean_wire_labels()
 
-
         self.clean_gate_labels()
-
 
         self.clean_constant_labels()
 
-
         self.merge_buffers_into_gates()
 
-
-        # s = time.time()
         self.merge_wires_into_gates()
-        # e = time.time()
-        # print(Fore.GREEN + f'merge_wires_into_gates runtime = {e - s}', Style.RESET_ALL)
 
-        # s = time.time()
         self.relabel_nodes()
-        # e = time.time()
-        # print(Fore.GREEN + f'relabel_nodes runtime = {e - s}', Style.RESET_ALL)
-
 
         self.delete_extra_fields()
 
-
-
         self.set_is_clean(True)
         self.count_iog()
-        e = time.time()
 
-
-        s = time.time()
         self.set_input_dict(self.extract_inputs())
         self.set_output_dict(self.extract_outputs())
         self.set_gate_dict(self.extract_gates())
         self.set_constant_dict(self.extract_constants())
-
 
     def delete_extra_fields(self):
         for n in self.graph.nodes:
             for field in REDUNDANT_FIELDS:
                 if field in self.graph.nodes[n].keys():
                     self.graph.nodes[n].pop(field)
+
         # delete all edge attributes
         for (n1, n2, d) in self.graph.edges(data=True):
             d.clear()
@@ -400,7 +339,6 @@ class Graph:
                     self.graph.nodes[n]['label'] = cur_gate
                     self.graph.nodes[n]['shape'] = 'invhouse'
 
-
     def clean_constant_labels(self):
         # g16[label = "F", shape = circle, fillcolor = white]
         for n in self.graph.nodes:
@@ -419,25 +357,15 @@ class Graph:
         self.set_graph(tmp_graph)
 
     def merge_points_into_source(self):
-        # s = time.time()
         tmp_graph = self.graph.copy(as_view=False)
-        # e = time.time()
-        # print(f'copy runtime = {e - s}')
 
-        # s = time.time()
         for e in self.graph.edges:
             if self.graph.nodes[e[1]][SHAPE] == 'point':
                 src_node = e[0]
                 des_node = e[1]
-                # tmp_graph = nx.contracted_nodes(tmp_graph, src_node, des_node, self_loops=False)
                 nx.contracted_nodes(tmp_graph, src_node, des_node, self_loops=False, copy=False)
-        # e = time.time()
-        # print(f'merging (iterating over edges) runtime = {e - s}')
 
-        # s = time.time()
         self.set_graph(tmp_graph)
-        # e = time.time()
-        # print(f'set graph runtime = {e - s}')
 
     def merge_wires_into_gates(self):
         tmp_graph = self.graph.copy(as_view=False)
@@ -448,7 +376,6 @@ class Graph:
                 # tmp_graph = nx.contracted_nodes(tmp_graph, src_node, des_node, self_loops=False)
                 nx.contracted_nodes(tmp_graph, src_node, des_node, self_loops=False, copy=False)
         self.set_graph(tmp_graph)
-
 
     def relabel_nodes(self):
         tmp_graph = self.graph.copy()
@@ -496,9 +423,7 @@ class Graph:
                 print(f'{n = }, {self.graph.nodes[n]}')
                 print('WARNING! No mapping needed!')
 
-
         self.set_graph(tmp_graph)
-
 
     def is_cleaned_pi(self, node):
         if not self.is_constant(node):
@@ -511,8 +436,10 @@ class Graph:
 
     def is_pruned_pi(self, node):
         if not self.is_constant(node):
-            if (re.search(r'in\d+', self.graph.nodes[node][LABEL]) and
-                    PRUNED in self.graph.nodes[node]):
+            if (
+                re.search(r'in\d+', self.graph.nodes[node][LABEL])
+                and PRUNED in self.graph.nodes[node]
+            ):
                 return True
             else:
                 return False
@@ -520,10 +447,11 @@ class Graph:
             return False
 
     def is_pi(self, node):
-
         if not self.is_constant(node):
-            if re.search(r'pi\d+', self.graph.nodes[node][LABEL]) or \
-                self.graph.nodes[node][LABEL].startswith('in'):
+            if (
+                re.search(r'pi\d+', self.graph.nodes[node][LABEL])
+                or self.graph.nodes[node][LABEL].startswith('in')
+            ):
                 return True
             else:
                 return False
@@ -533,7 +461,6 @@ class Graph:
     def is_cleaned_po(self, node):
         if not self.is_constant(node):
             if re.search(r'out\d+', self.graph.nodes[node][LABEL]):
-
                 return True
             else:
                 return False
@@ -542,8 +469,10 @@ class Graph:
 
     def is_po(self, node):
         if not self.is_constant(node):
-            if re.search(r'po\d+', self.graph.nodes[node][LABEL]) or \
-               self.graph.nodes[node][LABEL].startswith('out'):
+            if (
+                re.search(r'po\d+', self.graph.nodes[node][LABEL])
+                or self.graph.nodes[node][LABEL].startswith('out')
+            ):
                 return True
             else:
                 return False
@@ -552,8 +481,12 @@ class Graph:
 
     def is_wire(self, node):
         if not self.is_constant(node):
-            if (not self.is_pi(node) and not self.is_po(node) and not self.is_gate(node) and
-                    re.search('diamond', self.graph.nodes[node]['shape'])):
+            if (
+                not self.is_pi(node)
+                and not self.is_po(node)
+                and not self.is_gate(node)
+                and re.search('diamond', self.graph.nodes[node]['shape'])
+            ):
                 return True
             else:
                 return False
@@ -562,13 +495,18 @@ class Graph:
 
     def is_cleaned_gate(self, node):
         if not self.is_constant(node):
-            if (re.search('invhouse', self.graph.nodes[node][SHAPE]) and
-                    'contraction' not in self.graph.nodes[node].keys() and 'contractions' not in self.graph.nodes[
-                        node]):
+            if (
+                re.search('invhouse', self.graph.nodes[node][SHAPE])
+                and 'contraction' not in self.graph.nodes[node].keys()
+                and 'contractions' not in self.graph.nodes[node]
+            ):
                 return True
-            elif (re.search('invhouse', self.graph.nodes[node][SHAPE]) and re.search(r'g\d+', node) and
-                  'contraction' not in self.graph.nodes[node].keys() and 'contractions' not in self.graph.nodes[
-                      node]):
+            elif (
+                re.search('invhouse', self.graph.nodes[node][SHAPE])
+                and re.search(r'g\d+', node)
+                and 'contraction' not in self.graph.nodes[node].keys()
+                and 'contractions' not in self.graph.nodes[node]
+            ):
                 return True
             else:
                 return False
@@ -577,7 +515,10 @@ class Graph:
 
     def is_pruned_gate(self, node):
         if not self.is_constant(node):
-            if self.is_cleaned_gate(node) and PRUNED in self.graph.nodes[node]:
+            if (
+                self.is_cleaned_gate(node)
+                and PRUNED in self.graph.nodes[node]
+            ):
                 return True
             else:
                 return False
@@ -586,7 +527,10 @@ class Graph:
 
     def is_pruned_constant(self, node):
         if self.is_constant(node):
-            if self.is_cleaned_constant(node) and PRUNED in self.graph.nodes[node]:
+            if (
+                self.is_cleaned_constant(node)
+                and PRUNED in self.graph.nodes[node]
+            ):
                 return True
         else:
             return False
@@ -603,25 +547,28 @@ class Graph:
     def is_constant(self, node):
         if (LABEL in LABEL in self.graph.nodes[node]):
 
-            if (SHAPE not in self.graph.nodes[node] and
-                re.search(f'{CONST_0}|{CONST_1}', self.graph.nodes[node][LABEL])):
+            if (
+                SHAPE not in self.graph.nodes[node]
+                and re.search(f'{CONST_0}|{CONST_1}', self.graph.nodes[node][LABEL])
+            ):
                 return True
-            elif re.search(r'(TRUE|FALSE)', self.graph.nodes[node][LABEL]):
-                regex_constant = re.search(f'', self.graph.nodes[node][LABEL]).group()
+            elif re.search('(TRUE|FALSE)', self.graph.nodes[node][LABEL]):
                 return True
         else:
             return False
 
     def is_cleaned_constant(self, node):
-        if re.search(r'(TRUE|FALSE)', self.graph.nodes[node][LABEL]):
+        if re.search('(TRUE|FALSE)', self.graph.nodes[node][LABEL]):
             return True
         else:
             return False
 
     def is_buff(self, node):
         if not self.is_constant(node):
-            if (re.search('BUF', self.graph.nodes[node]['label']) and
-                    re.search('box', self.graph.nodes[node]['shape'])):
+            if (
+                re.search('BUF', self.graph.nodes[node]['label'])
+                and re.search('box', self.graph.nodes[node]['shape'])
+            ):
                 return True
             else:
                 return False
@@ -654,14 +601,14 @@ class Graph:
 
     def export_graph(self):
         with open(self.out_path, 'w') as f:
-            f.write(f"strict digraph \"\" {{\n")
+            f.write('strict digraph "" {\n')
             for n in self.graph.nodes:
                 self.export_node(n, f)
             for e in self.graph.edges:
                 self.export_edge(e, f)
-            f.write(f"}}\n")
+            f.write('}\n')
 
-    def export_node(self, n, file_handler: 'class _io.TextIOWrapper'):
+    def export_node(self, n, file_handler: IO[str]):
         # in3	[label=in3,shape=circle];
         if self.is_cleaned_pi(n) or self.is_cleaned_po(n):
 
@@ -683,17 +630,19 @@ class Graph:
     def export_edge(self, e: tuple, file_handler):
         # in3 -> g2;
         src, des = e
-        line = f"{src} -> {des};\n"
+        line = f'{src} -> {des};\n'
         file_handler.write(line)
 
     def convert_to_verilog(self):
         pass
 
     def __repr__(self):
-        return f'An object of class Graph\n' \
-               f'{self.name = }\n' \
-               f'{self.in_path = }\n' \
-               f'{self.out_path = }\n' \
-               f'{self.num_inputs = }\n' \
-               f'{self.num_outputs = }\n' \
-               f'{self.num_gates = }\n'
+        return (
+            f'An object of class Graph\n'
+            f'{self.name = }\n'
+            f'{self.in_path = }\n'
+            f'{self.out_path = }\n'
+            f'{self.num_inputs = }\n'
+            f'{self.num_outputs = }\n'
+            f'{self.num_gates = }\n'
+        )

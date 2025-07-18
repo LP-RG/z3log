@@ -3,6 +3,7 @@ import re
 from .config.config import *
 from .utils import *
 
+
 class Stats:
     def __init__(self, file_path: str):
         """
@@ -10,7 +11,7 @@ class Stats:
         :param file_path: the path to a csv file
         """
         full_name = get_pure_name(file_path)
-        idx = re.search(r'o\d+',full_name)
+        idx = re.search(r'o\d+', full_name)
         s, e = idx.span()
         # print(full_name[:e])
         self.__name = full_name[:e]
@@ -124,16 +125,17 @@ class Stats:
                 elif re.search(JUMPS, row[0]):
                     self.jump_list = row[1]
 
-
     def __repr__(self):
-        return f'An object of class Stats:\n' \
-               f'{self.name = }\n' \
-               f'{self.experiment = }\n' \
-               f'{self.wce = }\n' \
-               f'{self.total_runtime = }\n' \
-               f'{self.sat_runtime = }\n' \
-               f'{self.unsat_runtime}\n' \
-               f'{self.num_sats = }\n' \
-               f'{self.num_unsats = }\n' \
-               f'{self.jump_list = }\n' \
-               f''
+        return (
+            f'An object of class Stats:\n'
+            f'{self.name = }\n'
+            f'{self.experiment = }\n'
+            f'{self.wce = }\n'
+            f'{self.total_runtime = }\n'
+            f'{self.sat_runtime = }\n'
+            f'{self.unsat_runtime}\n'
+            f'{self.num_sats = }\n'
+            f'{self.num_unsats = }\n'
+            f'{self.jump_list = }\n'
+            f''
+        )

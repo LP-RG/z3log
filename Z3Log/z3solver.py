@@ -269,23 +269,23 @@ class Z3solver:
             f.write(f"}}\n")
 
     def is_input(self, node, graph):
-        if graph.graph.nodes[node][SHAPE] == INPUT_SHAPE and re.search('in\d+', node):
+        if graph.graph.nodes[node][SHAPE] == INPUT_SHAPE and re.search(r'in\d+', node):
             return True
         else:
             return False
 
     def is_gate(self, node, graph):
-        if graph.graph.nodes[node][SHAPE] == GATE_SHAPE and re.search('g\d+', node):
+        if graph.graph.nodes[node][SHAPE] == GATE_SHAPE and re.search(r'g\d+', node):
             return True
         else:
             return False
 
     def is_constant(self, node, graph):
-        if graph.graph.nodes[node][SHAPE] == CONSTANT_SHAPE and re.search('g\d+', node):
+        if graph.graph.nodes[node][SHAPE] == CONSTANT_SHAPE and re.search(r'g\d+', node):
             return True
 
     def is_output(self, node, graph):
-        if graph.graph.nodes[node][SHAPE] == OUTPUT_SHAPE and re.search('out\d+', node):
+        if graph.graph.nodes[node][SHAPE] == OUTPUT_SHAPE and re.search(r'out\d+', node):
             return True
         else:
             return False
@@ -791,19 +791,17 @@ class Z3solver:
         all_csv = [f for f in os.listdir(relevant_dir)]
         for report in all_csv:
             if re.search(self.approximate_benchmark, report) and report.endswith(extension):
-                gate_label = re.search('(g\d+)', report).group(1)
+                gate_label = re.search(r'(g\d+)', report).group(1)
 
                 with open(f'{relevant_dir}/{report}', 'r') as r:
                     csvreader = csv.reader(r)
                     for line in csvreader:
                         if re.search(WCE, line[0]):
-                            print(f'{line}')
                             gate_wce = float(line[1])
 
                             label_dict[gate_label] = gate_wce
                             self.append_label(gate_label, gate_wce)
 
-        print(f'{label_dict = }')
         return label_dict
 
     # TODO

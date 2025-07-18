@@ -144,7 +144,7 @@ class Verilog:
         # cur_list will be = ['[1:0]a', 'b'] which should be ['[1:0]a', '[1:0]b']
         if self.is_vector(cur_list[0]):
             # find the range
-            vector_range = re.search('\[\d+:\d+\]', cur_list[0]).group()
+            vector_range = re.search(r'\[\d+:\d+\]', cur_list[0]).group()
             # propagate the range for the rest of the elements of cur_list
             for i in range(1, len(cur_list)):
                 cur_list[i] = vector_range + cur_list[i]
@@ -156,7 +156,7 @@ class Verilog:
         :param var_name: the variable name
         :return: True if the variable is a vector, otherwise returns False
         """
-        if re.search('(\[\d+:\d+\])', var_name):
+        if re.search(r'(\[\d+:\d+\])', var_name):
             return True
         else:
             return False
@@ -169,7 +169,7 @@ class Verilog:
         """
         if self.is_vector(var_name):
             # remove [n:m] part
-            match_obj = re.search('(\[\d+:\d+\])(.*)', var_name)
+            match_obj = re.search(r'(\[\d+:\d+\])(.*)', var_name)
             return match_obj.group(2)
         else:
             return var_name
@@ -182,7 +182,7 @@ class Verilog:
         """
         if self.is_vector(var_name):
             # compute the length
-            match = re.search('\[(\d+):(\d+)\]', var_name)  # [1:0]a
+            match = re.search(r'\[(\d+):(\d+)\]', var_name)  # [1:0]a
             l_bound = int(match.group(1))  # 1
             r_bound = int(match.group(2))  # 0
             return abs((l_bound - r_bound) + 1)
@@ -247,14 +247,14 @@ class Verilog:
             if re.search('module', line) and not re.search('endmodule', line):
                 # extract module
 
-                match_object = re.search('module (\w+)', line)  # module adder(a, b, c)
+                match_object = re.search(r'module (\w+)', line)  # module adder(a, b, c)
                 module_name = match_object.group(1)  # adder
 
                 # extract port list
 
                 line = line.split(module_name)[1].replace('\n', '').strip()
 
-                match_object = re.search('\((.+)\)', line)  # module adder(a, b, c)
+                match_object = re.search(r'\((.+)\)', line)  # module adder(a, b, c)
 
                 ports_str = match_object.group(1)  # a, b, c
 

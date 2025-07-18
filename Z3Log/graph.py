@@ -178,7 +178,7 @@ class Graph:
         idx = 0
         for n in self.graph.nodes():
             if self.is_pi(n):
-                idx = re.search('\d+', n).group()
+                idx = re.search(r'\d+', n).group()
                 input_dict[int(idx)] = n
         return input_dict
 
@@ -187,7 +187,7 @@ class Graph:
         idx = 0
         for n in self.graph.nodes():
             if self.is_po(n):
-                idx = re.search('\d+', n).group()
+                idx = re.search(r'\d+', n).group()
                 output_dict[int(idx)] = n
         return output_dict
 
@@ -196,7 +196,7 @@ class Graph:
         idx = 0
         for n in self.graph.nodes:
             if self.is_cleaned_gate(n):
-                idx = re.search('\d+', n).group()
+                idx = re.search(r'\d+', n).group()
                 gate_dict[int(idx)] = n
         return gate_dict
 
@@ -205,7 +205,7 @@ class Graph:
         idx = 0
         for n in self.graph.nodes:
             if self.is_constant(n):
-                idx = re.search('\d+', n).group()
+                idx = re.search(r'\d+', n).group()
                 constant_dict[int(idx)] = n
         return constant_dict
 
@@ -312,7 +312,7 @@ class Graph:
         self.delete_extra_fields()
         for n in self.graph.nodes:
             if self.is_pi(n):
-                idx = re.search('\d+', self.graph.nodes[n][LABEL]).group()  # pi7 => idx=7
+                idx = re.search(r'\d+', self.graph.nodes[n][LABEL]).group()  # pi7 => idx=7
                 self.graph.nodes[n][LABEL] = f'in{idx}'
                 self.graph.nodes[n][SHAPE] = f'circle'
 
@@ -320,14 +320,14 @@ class Graph:
         for n in self.graph.nodes:
             if self.is_po(n):
 
-                idx = re.search('\d+', self.graph.nodes[n]['label']).group()  # po12 => idx=12
+                idx = re.search(r'\d+', self.graph.nodes[n]['label']).group()  # po12 => idx=12
                 self.graph.nodes[n]['label'] = f'out{idx}'
                 self.graph.nodes[n]['shape'] = f'doublecircle'
 
     def clean_wire_labels(self):
         for n in self.graph.nodes:
             if self.is_wire(n):
-                idx = re.search('\d+', self.graph.nodes[n]['label']).group()  # n317 => idx=317
+                idx = re.search(r'\d+', self.graph.nodes[n]['label']).group()  # n317 => idx=317
                 self.graph.nodes[n]['label'] = f'g{idx}'
                 self.graph.nodes[n]['shape'] = f'square'
 
@@ -370,7 +370,7 @@ class Graph:
     def merge_wires_into_gates(self):
         tmp_graph = self.graph.copy(as_view=False)
         for e in self.graph.edges:
-            if re.search('g\d+', self.graph.nodes[e[1]]['label']):
+            if re.search(r'g\d+', self.graph.nodes[e[1]]['label']):
                 src_node = e[0]
                 des_node = e[1]
                 # tmp_graph = nx.contracted_nodes(tmp_graph, src_node, des_node, self_loops=False)

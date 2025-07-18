@@ -6,3 +6,6 @@
 /build
 /dist
 /z3log.egg-info
+
+# virtual environments
+.venv*

@@ -770,7 +770,7 @@ class Z3solver:
 
 
 
-    def label_circuit(self, constant_value: bool = False, partial: bool = False, et: int = -1):
+    def label_circuit(self, constant_value: bool = False, partial: bool = False, et: int = -1, metric: str = 'wae'):
         self.experiment = SINGLE
         self.set_strategy(MONOTONIC)
 
@@ -802,7 +802,8 @@ class Z3solver:
                                 # read the label
                                 predecessors_to_label.extend(list(self.labeling_graph.graph.predecessors(gate)))
             self.run_z3pyscript_labeling()
-            self.import_labels(constant_value)
+            print(metric)
+            self.import_labels(constant_value, metric = metric)
 
             return self.labels
 
@@ -819,7 +820,7 @@ class Z3solver:
 
             return self.labels
 
-    def import_labels(self, constant_value: bool = False) -> Dict:
+    def import_labels(self, constant_value: bool = False, metric: str = 'wae') -> Dict:
 
         label_dict: Dict[str, int] = {}
         folder, extension = OUTPUT_PATH['report']
@@ -841,13 +842,13 @@ class Z3solver:
                     csvreader = csv.reader(r)
                     for line in csvreader:
                         if re.search(WCE, line[0]):
-                            print(f'{line}')
-                            gate_wce = float(line[1])
-
+                            if(metric == 'wae'):
+                                gate_wce = int((line[1]))
+                            elif(metric == 'wre'):
+                                gate_wce = int(float(line[1]) * 100)
                             label_dict[gate_label] = gate_wce
                             self.append_label(gate_label, gate_wce)
 
-        print(f'{label_dict = }')
         return label_dict
 
     # TODO
@@ -1288,12 +1289,12 @@ class Z3solver:
         elif self.metric == WHD:
             stats += f"max = {self.graph.num_outputs}\n"
         return stats
-
+    
+#                    
     def express_mc_while_loop(self):
         loop = ''
         loop += f's=Solver()\n' \
                 f'start_whole = time.time()\n'
-
         for sample in self.samples:
             loop += f's.push()\n' \
                     f's.add(f_error(exact_out, approx_out) == z3_abs(exact_out - approx_out))\n' \
@@ -1522,7 +1523,8 @@ class Z3solver:
                         loop += f"o{i}_{XOR}_{INT}, "
             # TODO
         elif self.metric == WRE:
-            loop += f'{TAB}s.add(f_error(exact_out, approx_out) == z3_abs(exact_out - approx_out) / (z3_abs(exact_out) + z3_abs(1.0))  )\n' \
+            loop += f'{TAB}divider = If(f_exact(exact_out) == IntVal(0), IntVal(1), f_exact(exact_out))\n' \
+                    f'{TAB}s.add(f_error(exact_out, approx_out) == ToReal(z3_abs(exact_out - approx_out)) / ToReal(divider))\n' \
                     f"{TAB}s.add(z3_abs(f_error(exact_out, approx_out)) > stats['et'])\n"
 
         loop += f"{TAB}response = s.check()\n"
@@ -1530,28 +1532,28 @@ class Z3solver:
         loop += self.express_bisection_while_loop_sat()
         loop += self.express_bisection_while_loop_unsat()
         loop += self.express_stats()
-
         return loop
+
 
     def express_monotonic_while_loop(self):
         loop = ''
 
         loop += f'start_whole = time.time()\n'
-        # print(f'{self.optimization == MAXIMIZE = }')
-        # print(f'{self.optimization = }')
         if self.optimization == OPTIMIZE or self.optimization == MAXIMIZE and (self.strategy != BISECTION):
             loop += f's = Optimize()\n'
         else:
-            # print('We are here')
             loop += f's = Solver()\n'
-
-        loop += f"stats['jumps'].append(stats['et'])\n" \
-                f'while(not foundWCE):\n' \
-                f'{TAB}start_iteration = time.time()\n' \
-                f'{TAB}s.push()\n'
+         
+        loop += '\n'.join((
+                f"stats['jumps'].append(stats['et'])",
+                f'while(not foundWCE):',
+                f'{TAB}start_iteration = time.time()',
+                f'{TAB}s.push()',
+                ''
+        ))
         if self.metric == WAE or self.metric == WRE:
             loop += f'{TAB}s.add(f_exact(exact_out) == exact_out)\n' \
-                    f'{TAB}s.add(f_approx(approx_out) == approx_out)\n'
+                    f'{TAB}s.add(f_approx(approx_out) == approx_out)\n'\
 
         if self.metric == WAE:
             if self.optimization == MAXIMIZE and (self.strategy != BISECTION):
@@ -1567,7 +1569,7 @@ class Z3solver:
                 loop += f'{TAB}s.add(f_error(exact_out, approx_out) == z3_abs(exact_out - approx_out))\n' \
                         f"{TAB}s.add((f_error(exact_out, approx_out)) > z3_abs(stats['et']))\n"
 
-            # TODO add optimization thingy right here
+        # TODO add optimization thingy right here
         elif self.metric == WHD:
             if self.optimization == MAXIMIZE and (self.strategy != BISECTION):
                 pass
@@ -1593,16 +1595,20 @@ class Z3solver:
         elif self.metric == WRE:
             if self.optimization == MAXIMIZE and (self.strategy != BISECTION):
                 if self.style == 'max':
-                    loop += f'{TAB}s.add(f_error(exact_out, approx_out) == z3_abs(exact_out - approx_out) / (z3_abs(exact_out) + z3_abs(1.0))  )\n' \
+                    loop += f'{TAB}divider = If(f_exact(exact_out) == IntVal(0), IntVal(1), f_exact(exact_out))\n' \
+                            f'{TAB}s.add(f_error(exact_out, approx_out) == ToReal(z3_abs(exact_out - approx_out)) / ToReal(divider))\n' \
                             f"{TAB}s.add(z3_abs(f_error(exact_out, approx_out)) > stats['et'])\n" \
                             f"{TAB}s.maximize(z3_abs(f_error(exact_out, approx_out)))\n"
                 if self.style == 'min':
-                    loop += f'{TAB}s.add(f_error(exact_out, approx_out) == z3_abs(exact_out - approx_out) / (z3_abs(exact_out) + z3_abs(1.0))  )\n' \
+                    loop += f'{TAB}divider = If(f_exact(exact_out) == IntVal(0), IntVal(1), f_exact(exact_out))\n' \
+                            f'{TAB}s.add(f_error(exact_out, approx_out) == ToReal(z3_abs(exact_out - approx_out)) / ToReal(divider))\n' \
                             f'{TAB}s.add(z3_abs(f_error(exact_out, approx_out)) > 0)\n' \
                             f'{TAB}s.minimize(z3_abs(f_error(exact_out, approx_out)))\n'
             else:
-                loop += f'{TAB}s.add(f_error(exact_out, approx_out) == z3_abs(exact_out - approx_out) / (z3_abs(exact_out) + z3_abs(1.0))  )\n' \
-                        f"{TAB}s.add(z3_abs(f_error(exact_out, approx_out)) > stats['et'])\n"
+                loop += '\n'.join((
+                        f'{TAB}divider = If(f_exact(exact_out) == IntVal(0), IntVal(1), f_exact(exact_out))\n',
+                        f'{TAB}s.add(f_error(exact_out, approx_out) == ToReal(z3_abs(exact_out - approx_out)) / ToReal(divider))\n',
+                ))
         loop += f"{TAB}response = s.check()\n"
 
         loop += self.express_monotonic_while_loop_sat()
@@ -1980,11 +1986,14 @@ class Z3solver:
 
     def declare_original_circuit(self):
         exact_circuit_declaration = ''
+        input_list = []
         # inputs
         for n in self.graph.graph.nodes:
             if re.search(r'in\d+', self.graph.graph.nodes[n]['label']):
+                input_list.append(n)
                 exact_circuit_declaration = f'{exact_circuit_declaration}' \
                                             f'{self.declare_gate(n)}\n'
+        exact_circuit_declaration +=  f"input_values = [{', '.join(input_list)}]\n"
         exact_circuit_declaration += f'\n'
         # gates
         for n in self.graph.graph.nodes:
@@ -2350,4 +2359,4 @@ class Z3solver:
             process = subprocess.run([PYTHON3, self.out_path], stderr=PIPE, stdout=PIPE)
 
         self.set_sample_results(self.import_results())
-    # TODO: decorators (end)--------------------------
+
